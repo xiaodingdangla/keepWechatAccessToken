@@ -4,16 +4,13 @@
 > Get the AccessToken of WeChat official account regularly
 
 ## 项目介绍
-本项目基于python3.x 框架为APScheduler和FastAPI
-通过定时任务获取微信公众号的AccessToken，然后将AccessToken存入redis中。
-通过FastAPI提供接口，供其他项目调用，部署本项目请勿对外暴露API接口。
-配置.env文件中的参数，即可运行。
+该项目是一个基于python 3.x的定时任务项目，使用了APScheduler和FastAPI框架。主要功能是通过定时任务获取微信公众号的AccessToken，并将其存入Redis中。同时，通过FastAPI提供接口，供其他项目调用。为了保障安全，部署本项目时请勿对外暴露API接口。只需配置.env文件中的参数，即可运行该项目。
 
 ## 环境要求
 - python3.x
 - redis
-- FastAPI
-- APScheduler
+- FastAPI（用于提供接口）
+- APScheduler（用于定时任务）
 - requests
 - gunicorn
 
@@ -28,9 +25,9 @@ python main.py
 ### docker部署
 ```bash
 # 构建镜像
-docker build -t keepToken:v1.0 .
+docker build -t dang-token:1.0.1 .
 # 启动容器
-docker run -d --name keepToken -p 8000:8000 keepToken:v1.0
+docker run -d --name dang-token -p 8000:8000 dang-token:1.0.1
 ```
 
 ## 配置文件
@@ -50,3 +47,6 @@ REDIS_USER = xxxxx
 REDIS_PASSWORD = xxxxx
 # redis库
 REDIS_DB = 0
+# 日志路径
+LOG_PATH = /path/to/log
+```

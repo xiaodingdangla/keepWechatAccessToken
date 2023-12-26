@@ -1,17 +1,31 @@
 import json
+import logging
 
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from scheduler import scheduler, redis_conn
+from scheduler import scheduler, redis_conn, log_path
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+fh = logging.FileHandler(filename=log_path)
+formatter = logging.Formatter(
+    "%(asctime)s - %(module)s - %(funcName)s - line:%(lineno)d - %(levelname)s - %(message)s"
+)
+fh.setFormatter(formatter)
+# 将日志输出至文件,编码为utf-8
+fh.encoding = 'utf-8'
+logger.addHandler(fh)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print('开始启动')
+    logging.info('开始启动')
     scheduler.start()
     yield
-    print('开始关闭')
+    logging.info('开始关闭')
     scheduler.shutdown()
 
 

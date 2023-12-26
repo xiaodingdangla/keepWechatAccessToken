@@ -1,5 +1,8 @@
 import json
+import logging
 import os, redis, requests
+import urllib.parse
+
 from dotenv import load_dotenv, find_dotenv
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -20,6 +23,7 @@ redis_port = env_dist.get('REDIS_PORT')
 redis_username = env_dist.get('REDIS_USERNAME')
 redis_password = env_dist.get('REDIS_PASSWORD')
 redis_db = env_dist.get('REDIS_DB')
+log_path = env_dist.get('LOG_PATH')
 
 # redis connection
 pool = redis.ConnectionPool(host=redis_host, port=redis_port, db=redis_db, username=redis_username,
@@ -51,31 +55,33 @@ def get_access_token():
             "secret": wechat_secret
         }
         # 发送请求
-        res = requests.get(f"{wechat_api_url}/cgi-bin/token", params=kw, timeout=10)
+        url = urllib.parse.urljoin(wechat_api_url, "/cgi-bin/token")
+        res = requests.get(url, params=kw, timeout=10)
+
         res.raise_for_status()  # 检查请求是否成功，如果不成功则抛出异常
+
         wechat_access_token = res.json().get('access_token')
         create_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # 构造配置信息
         wechat_configurations = {
             "access_token": wechat_access_token,
             "create_time": create_time
         }
-        # 转换为json
+
+        # 转换为JSON字符串
         wechat_json = json.dumps(wechat_configurations)
-        # 存入redis
+
+        # 存入Redis
         redis_conn.set("wechat_configurations", str(wechat_json))
-        print(f"get access_token success, current time: {create_time}")
+
+        logging.info(f"获取 access_token 成功，当前时间: {create_time}")
     except requests.RequestException as req_err:
-        print(f"Request error: {req_err}")
+        logging.error(f"请求错误: {req_err}")
     except json.JSONDecodeError as json_err:
-        print(f"JSON decoding error: {json_err}")
+        logging.error(f"JSON 解码错误: {json_err}")
     except Exception as e:
-        print(f"Unexpected error: {e}")
-    else:
-        # 如果没有异常，可以执行一些额外的操作
-        pass
-    finally:
-        # 无论是否发生异常，都会执行的代码块
-        pass
+        logging.error(f"意外错误: {e}")
 
 
 scheduler = AsyncIOScheduler(**interval_task)
