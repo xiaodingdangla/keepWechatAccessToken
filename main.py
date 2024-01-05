@@ -4,12 +4,13 @@ import logging
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from scheduler import scheduler, redis_conn, log_path
+from scheduler import scheduler, redis_conn, load_config_from_env
+config = load_config_from_env()
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
-fh = logging.FileHandler(filename=log_path)
+fh = logging.FileHandler(filename=config['log_path'])
 formatter = logging.Formatter(
     "%(asctime)s - %(module)s - %(funcName)s - line:%(lineno)d - %(levelname)s - %(message)s"
 )
