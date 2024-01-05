@@ -25,9 +25,9 @@ python main.py
 ### docker部署
 ```bash
 # 构建镜像
-docker build -t dang-token:1.0.1 .
+docker build -t dang-token:1.0.2 .
 # 启动容器
-docker run -d --name dang-token -p 8000:8000 dang-token:1.0.1
+docker run -d --name dang-token -p 8000:8000 dang-token:1.0.2
 ```
 
 ## 配置文件
@@ -41,8 +41,6 @@ WECHAT_SECRET = xxxxx
 REDIS_HOST = xxxxx
 # redis端口
 REDIS_PORT = 6379
-# redis用户
-REDIS_USER = xxxxx
 # redis密码
 REDIS_PASSWORD = xxxxx
 # redis库
