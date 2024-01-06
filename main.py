@@ -4,7 +4,8 @@ import logging
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from scheduler import scheduler, redis_conn, load_config_from_env
+from scheduler import scheduler, load_config_from_env
+from connection_pool import Connect
 config = load_config_from_env()
 
 logger = logging.getLogger()
@@ -24,6 +25,9 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logging.info('开始启动')
+    with Connect() as db:
+        db.cur.execute("CREATE TABLE IF NOT EXISTS key_value (kk TEXT PRIMARY KEY, vv TEXT)")
+        db.conn.commit()
     scheduler.start()
     yield
     logging.info('开始关闭')
@@ -36,7 +40,10 @@ app = FastAPI(lifespan=lifespan)
 # 通过路由获取access_token
 @app.get("/wechat/access_token", tags=["wechat"], summary="获取access_token")
 async def get_access_token():
-    return json.loads(redis_conn.get("wechat_configurations"))
+    with Connect() as db:
+        db.cur.execute("SELECT * FROM key_value WHERE kk = 'wechat_configurations'")
+        result = db.cur.fetchone()
+    return json.loads(result[1])
 
 
 if __name__ == '__main__':

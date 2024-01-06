@@ -1,8 +1,8 @@
 import json
 import logging
-import os, redis, requests
+import os, requests
 import urllib.parse
-
+from connection_pool import Connect
 from dotenv import load_dotenv, find_dotenv
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -18,21 +18,11 @@ def load_config_from_env():
         "wechat_appid": env_dist.get('WECHAT_APPID'),
         "wechat_secret": env_dist.get('WECHAT_SECRET'),
         "wechat_api_url": env_dist.get('WECHAT_API_URL'),
-        "redis_host": env_dist.get('REDIS_HOST'),
-        "redis_port": env_dist.get('REDIS_PORT'),
-        "redis_password": env_dist.get('REDIS_PASSWORD'),
-        "redis_db": int(env_dist.get('REDIS_DB')),
         "log_path": env_dist.get('LOG_PATH'),
     }
 
 
 config = load_config_from_env()
-
-# redis connection
-# Redis 连接
-pool = redis.ConnectionPool(**config, decode_responses=True)
-redis_conn = redis.Redis(connection_pool=pool)
-
 
 def get_access_token():
     try:
@@ -56,18 +46,19 @@ def get_access_token():
         wechat_json = json.dumps(wechat_configurations)
 
         # 存入Redis
-        redis_conn.set("wechat_configurations", str(wechat_json))
-
+        with Connect() as db:
+            db.cur.execute(f"INSERT OR REPLACE INTO key_value VALUES ('wechat_configurations','{str(wechat_json)}')")
+            db.conn.commit()
         logging.info(f"获取 access_token 成功，当前时间: {create_time}")
     except (requests.RequestException, json.JSONDecodeError) as err:
         logging.error(f"发生错误: {err}")
-        retry_count = int(redis_conn.get("retry_count") or 0) + 1
-        logging.info(f"重试次数: {retry_count}")
-        if retry_count <= 5:
-            redis_conn.set("retry_count", retry_count);
-            get_access_token()
-        else:
-            logging.error(f"已达到最大重试次数，放弃获取 access_token")
+        # retry_count = int(redis_conn.get("retry_count") or 0) + 1
+        # logging.info(f"重试次数: {retry_count}")
+        # if retry_count <= 5:
+        #     redis_conn.set("retry_count", retry_count);
+        #     get_access_token()
+        # else:
+        #     logging.error(f"已达到最大重试次数，放弃获取 access_token")
 
 
 scheduler = AsyncIOScheduler()
